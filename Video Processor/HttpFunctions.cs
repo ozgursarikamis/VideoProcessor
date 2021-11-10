@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Extensions.Logging;
 
 namespace VideoProcessor;
 
@@ -13,14 +12,15 @@ public class HttpFunctions
     [FunctionName(nameof(ProcessorVideoStarter))]
     public static async Task<IActionResult> ProcessorVideoStarter(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req,
-        [DurableClient] IDurableOrchestrationClient starter,
-        ILogger log)
+        [DurableClient] IDurableOrchestrationClient starter)
     {
-        // Function input comes from the request content.
-        var instanceId = await starter.StartNewAsync("Function1", null);
+        var video = req.GetQueryParameterDictionary()["video"];
+        if (video == null)
+        {
+            return new BadRequestObjectResult("Please pass the video location the query string");
+        }
 
-        log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
-
+        var instanceId = await starter.StartNewAsync("ProcessVideoOrchestrator", null, video);
         return starter.CreateCheckStatusResponse(req, instanceId);
     }
 }
