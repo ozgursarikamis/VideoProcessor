@@ -1,0 +1,21 @@
+ORCHESTRATOR FUNCTION RULES
+	- Don't
+		- use current date & time
+		- Generate random numbers of guids,
+		- Access data stores (e.g. database, configuration)
+
+	- Do
+		- Use `IDurableOrhectrationContext.CurrentUtcDateTime
+		- Pass configuration into your orchestrator function
+		- Retrieve data in activity functions
+
+	- Must be non-blocking:
+		- No I/O to disk or network
+		- No Thread.Sleep
+
+	-  Do not create infinite loops
+		- Event history needs to be replayable
+		- ContunieAsNew should be used instead
+
+LOGGING IN ORCHESTRATOR FUNCTIONS:
+	log = ctx.CreateReplaySafeLogger(log);
