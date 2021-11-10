@@ -1,0 +1,23 @@
+DURABLE FUNCTIONS STATE STORAGE
+
+	- Durable Functions uses Azure Storage
+
+	- Storage Queues
+		- Messages to trigger the next function
+
+	- Storage Tables
+		- Storage state of orchestrations
+
+	- Event sourcing
+		- Never update rows, only append new ones.
+		- Store full execution history
+
+DURABLE FUNCTIONS STORAGE ACCOUNT
+
+	- You provide the connection string
+		- look inside with Azure Storage Explorer
+
+	- "Task Hub"
+		- The storage used by Durable Functions
+		- You can use multiple task hubs
+		- They can share a storage account

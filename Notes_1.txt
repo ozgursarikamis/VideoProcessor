@@ -1,0 +1,48 @@
+WHY DURABLE FUNCTIONS?
+
+	- Define workflow in code
+		- Parallel execution
+		- Error Handling
+		- Easily understood "Orchestrator Function"
+	
+	- Supports many workflow patterns
+		- Waiting for human interaction
+	
+	- Solves the state problem
+		- Track workflow progress
+
+
+KEY BENEFITS:
+	
+	- Define workflows in code.
+		- Easy to understand the big picture
+		- Good seperation of concerns
+	
+	- Easy to implement complex workflows
+		- Fan-out & Fan-in
+		- Wait for human interaction
+	
+	- Consolidate exception handling
+
+	- Check on progress of cancel workflow
+		- Manage state for you.
+
+
+KEY DURABLE FUNCTION CONCEPTS:
+	
+	- Orchestrator functions:
+	
+		- Define the workflow
+		- Triggers "activity" functions
+		- Sleeps during activities
+
+	- Activity Functions
+
+		- Functions as a regular Azure Function
+		- Performs a single step in workflow
+		- Can receive and return data
+	
+	- Starting "orchestrations"
+
+		- DurableClient binding
+
