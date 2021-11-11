@@ -27,8 +27,13 @@ public class OrchestratorFunctions
 
             // calling second function:
             logger.LogInformation("about to call extract thumbnail activity");
-            thumbnailLocation = await context.CallActivityAsync<string>("ExtractThumbnail", transcodedLocation);
-
+            // thumbnailLocation = await context.CallActivityAsync<string>("ExtractThumbnail", transcodedLocation);
+            thumbnailLocation = await context.CallActivityWithRetryAsync<string>(
+                "ExtractThumbnail",
+                new RetryOptions(TimeSpan.FromSeconds(5), 3)
+                {
+                    Handle = ex => ex is InvalidOperationException
+                }, transcodedLocation);
             // and the final one:
             logger.LogInformation("about to call prepend intro activity");
             withIntroLocation = await context.CallActivityAsync<string>("PrependIntro", thumbnailLocation);
