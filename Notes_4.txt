@@ -1,0 +1,9 @@
+Durable functions stores state in Azure Storage
+
+A storage account can contain more than one task hub.
+Can be configured in host.json file.
+
+EXCEPTIONS IN ACTIVITY FUNCTIONS
+	- Try-catch
+	- don't catch exceptions, allow them to propagate up to the orchestrator function.
+	- maybe calling a clean-up mechanism... (by catching it in orchestrator.)

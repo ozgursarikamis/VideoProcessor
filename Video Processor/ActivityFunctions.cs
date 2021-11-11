@@ -22,6 +22,11 @@ namespace VideoProcessor
         public static async Task<string> ExtractThumbnail([ActivityTrigger] string inputVideo, ILogger log)
         {
             log.LogInformation($"Extracting Thumbnail {inputVideo}");
+
+            if (inputVideo.Contains("error"))
+            {
+                throw new InvalidOperationException("Failed to extract thumbnail");
+            }
             await Task.Delay(3000);
 
             return $"{Path.GetFileNameWithoutExtension(inputVideo)}-thumbnail.png";
