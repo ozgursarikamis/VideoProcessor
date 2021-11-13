@@ -17,7 +17,8 @@ public class OrchestratorFunctions
         string transcodedLocation = null;
         string thumbnailLocation = null;
         string withIntroLocation = null;
-        
+        string approvalResult;
+
         var videoLocation = context.GetInput<string>();
 
         try
@@ -37,6 +38,18 @@ public class OrchestratorFunctions
             // and the final one:
             logger.LogInformation("about to call prepend intro activity");
             withIntroLocation = await context.CallActivityAsync<string>("PrependIntro", thumbnailLocation);
+
+            await context.CallActivityAsync("SendApprovalRequestEmail", withIntroLocation);
+            approvalResult = await context.WaitForExternalEvent<string>("ApprovalResult");
+
+            if (approvalResult == "Approved")
+            {
+                await context.CallActivityAsync("PublishVideo", withIntroLocation);
+            }
+            else
+            {
+                await context.CallActivityAsync("RejectVideo", withIntroLocation);
+            }
         }
         catch (Exception e)
         {
@@ -54,7 +67,8 @@ public class OrchestratorFunctions
         {
             Transcoded = transcodedLocation,
             Thumbnail = thumbnailLocation,
-            WithIntro = withIntroLocation
+            WithIntro = withIntroLocation,
+            ApprovalResult = approvalResult
         };
     }
 

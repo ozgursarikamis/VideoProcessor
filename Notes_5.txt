@@ -1,0 +1,10 @@
+﻿SENDING EVENTS TO WORKFLOWS
+    Send using the 'raiseEvent' API
+        This endpoint includes a secret key
+
+    Human interaction triggers as regular Azure Function
+        - HttpTrigger
+        - QueueTrigger
+
+    External systems might send webhooks.
+        - Receive webhooks and pass on event to workflow.

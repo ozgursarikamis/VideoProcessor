@@ -10,6 +10,27 @@ namespace VideoProcessor
 {
     public static class ActivityFunctions
     {
+        [FunctionName(nameof(SendApprovalRequestEmail))]
+        public static async Task SendApprovalRequestEmail([ActivityTrigger] string inputVideo, ILogger log)
+        {
+            log.LogInformation($"Requesting approval for {inputVideo}.");
+            await Task.Delay(1000); 
+        }
+
+        [FunctionName(nameof(PublishVideo))]
+        public static async Task PublishVideo([ActivityTrigger] string inputVideo, ILogger log)
+        {
+            log.LogInformation($"Publishing {inputVideo}.");
+            await Task.Delay(1000); 
+        }
+
+        [FunctionName(nameof(RejectVideo))]
+        public static async Task RejectVideo([ActivityTrigger] string inputVideo, ILogger log)
+        {
+            log.LogInformation($"Rejecting {inputVideo}.");
+            await Task.Delay(1000);
+        }
+
         [FunctionName(nameof(GetTranscodeBitRates))]
         public static int[] GetTranscodeBitRates([ActivityTrigger] object input)
         {
