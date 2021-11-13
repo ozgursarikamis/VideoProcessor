@@ -7,3 +7,7 @@ EXCEPTIONS IN ACTIVITY FUNCTIONS
 	- Try-catch
 	- don't catch exceptions, allow them to propagate up to the orchestrator function.
 	- maybe calling a clean-up mechanism... (by catching it in orchestrator.)
+
+
+SUB-ORCHESTRATION:
+	- Calling an orchestration from another orchestration

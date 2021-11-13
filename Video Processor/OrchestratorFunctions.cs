@@ -13,22 +13,18 @@ public class OrchestratorFunctions
     public static async Task<object> ProcessVideoOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context, ILogger logger)
     {
         logger = context.CreateReplaySafeLogger(logger);
-
-        var videoLocation = context.GetInput<string>();
-
+        
         string transcodedLocation = null;
         string thumbnailLocation = null;
         string withIntroLocation = null;
+        
+        var videoLocation = context.GetInput<string>();
 
         try
         {
-            var bitRates = await context.CallActivityAsync<int[]>("GetTranscodeBitRates", null);
-            var transcodeTasks = bitRates
-                .Select(bitRate => new VideoFileInfo {Location = videoLocation, BitRate = bitRate})
-                .Select(info => context.CallActivityAsync<VideoFileInfo>("TranscodeVideo", info))
-                .ToList();
-
-            var transcodeResults = await Task.WhenAll(transcodeTasks);
+            var transcodeResults =
+                await context.CallSubOrchestratorAsync<VideoFileInfo[]>(nameof(TranscodeVideoOrhcestrator),
+                    videoLocation);
 
             transcodedLocation = transcodeResults.OrderByDescending(r => r.BitRate)
                 .Select(r => r.Location)
@@ -60,5 +56,20 @@ public class OrchestratorFunctions
             Thumbnail = thumbnailLocation,
             WithIntro = withIntroLocation
         };
+    }
+
+    [FunctionName(nameof(TranscodeVideoOrhcestrator))]
+    public static async Task<VideoFileInfo[]> TranscodeVideoOrhcestrator(
+        [OrchestrationTrigger] IDurableOrchestrationContext context)
+    {
+        var videoLocation = context.GetInput<string>();
+        var bitRates = await context.CallActivityAsync<int[]>("GetTranscodeBitRates", null);
+        var transcodeTasks = bitRates
+            .Select(bitRate => new VideoFileInfo {Location = videoLocation, BitRate = bitRate})
+            .Select(info => context.CallActivityAsync<VideoFileInfo>("TranscodeVideo", info))
+            .ToList();
+
+        var transcodeResults = await Task.WhenAll(transcodeTasks);
+        return transcodeResults;
     }
 }
