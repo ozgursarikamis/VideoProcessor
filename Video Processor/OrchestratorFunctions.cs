@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
@@ -21,19 +22,22 @@ public class OrchestratorFunctions
 
         try
         {
-            // calling first function:
-            logger.LogInformation("about to call transcode video activity");
-            transcodedLocation = await context.CallActivityAsync<string>("TranscodeVideo", videoLocation);
+            var bitRates = new [] { 1000, 2000, 3000, 4000 };
+            var transcodeTasks = bitRates
+                .Select(bitRate => new VideoFileInfo {Location = videoLocation, BitRate = bitRate})
+                .Select(info => context.CallActivityAsync<VideoFileInfo>("TranscodeVideo", info))
+                .ToList();
+
+            var transcodeResults = await Task.WhenAll(transcodeTasks);
+
+            transcodedLocation = transcodeResults.OrderByDescending(r => r.BitRate)
+                .Select(r => r.Location)
+                .First();
 
             // calling second function:
             logger.LogInformation("about to call extract thumbnail activity");
-            // thumbnailLocation = await context.CallActivityAsync<string>("ExtractThumbnail", transcodedLocation);
-            thumbnailLocation = await context.CallActivityWithRetryAsync<string>(
-                "ExtractThumbnail",
-                new RetryOptions(TimeSpan.FromSeconds(5), 3)
-                {
-                    Handle = ex => ex is InvalidOperationException
-                }, transcodedLocation);
+            thumbnailLocation = await context.CallActivityAsync<string>("ExtractThumbnail", transcodedLocation);
+
             // and the final one:
             logger.LogInformation("about to call prepend intro activity");
             withIntroLocation = await context.CallActivityAsync<string>("PrependIntro", thumbnailLocation);
