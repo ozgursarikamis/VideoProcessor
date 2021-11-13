@@ -17,7 +17,7 @@ public class OrchestratorFunctions
         string transcodedLocation = null;
         string thumbnailLocation = null;
         string withIntroLocation = null;
-        string approvalResult;
+        var approvalResult = "Unknown";
 
         var videoLocation = context.GetInput<string>();
 
@@ -39,8 +39,21 @@ public class OrchestratorFunctions
             logger.LogInformation("about to call prepend intro activity");
             withIntroLocation = await context.CallActivityAsync<string>("PrependIntro", thumbnailLocation);
 
-            await context.CallActivityAsync("SendApprovalRequestEmail", withIntroLocation);
-            approvalResult = await context.WaitForExternalEvent<string>("ApprovalResult");
+            await context.CallActivityAsync("SendApprovalRequestEmail", new ApprovalInfo
+            {
+                OrchestrationId = context.InstanceId,
+                VideoLocation = withIntroLocation
+            });
+
+            try
+            {
+                approvalResult =await context.CallActivityAsync<string>("ApprovalResult", TimeSpan.FromSeconds(30));
+            }
+            catch (TimeoutException )
+            {
+                logger.LogWarning("Timed out waiting for approval");
+                approvalResult = "Timed Out";
+            }
 
             if (approvalResult == "Approved")
             {

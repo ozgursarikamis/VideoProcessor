@@ -5,16 +5,46 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
+using SendGrid.Helpers.Mail;
 
 namespace VideoProcessor
 {
     public static class ActivityFunctions
     {
         [FunctionName(nameof(SendApprovalRequestEmail))]
-        public static async Task SendApprovalRequestEmail([ActivityTrigger] string inputVideo, ILogger log)
+        public static void SendApprovalRequestEmail(
+            [ActivityTrigger] ApprovalInfo approvalInfo,
+            [SendGrid(ApiKey = "SendGridKey")] out SendGridMessage message,
+            [Table("Approvals", "AzureWebJobsStorage")] out Approval approval,
+            ILogger log)
         {
-            log.LogInformation($"Requesting approval for {inputVideo}.");
-            await Task.Delay(1000); 
+            var approvalCode = Guid.NewGuid().ToString("N");
+            approval = new Approval
+            {
+                PartitionKey = "Approval",
+                RowKey = approvalCode,
+                OrchestrationId = approvalInfo.OrchestrationId
+            };
+            var approverEmail = new EmailAddress(Environment.GetEnvironmentVariable("ApproverEmail"));
+            var senderEmail = new EmailAddress(Environment.GetEnvironmentVariable("SenderEmail"));
+
+            log.LogInformation($"Sending approval request for {approvalInfo.VideoLocation}");
+            var host = Environment.GetEnvironmentVariable("Host");
+
+            var functionAddress = $"{host}/api/SubmitVideoApproval/{approvalCode}";
+            var approvedLink = functionAddress + "?result=Approved";
+            var rejectedLink = functionAddress + "?result=Rejected";
+            var body = $"Please review {approvalInfo.VideoLocation}<br>"
+                       + $"<a href=\"{approvedLink}\">Approve</a><br>"
+                       + $"<a href=\"{rejectedLink}\">Reject</a>";
+            message = new SendGridMessage
+            {
+                Subject = "A video is awaiting approval (V2)",
+                From = senderEmail,
+                HtmlContent = body
+            };
+            message.AddTo(approverEmail);
+            log.LogWarning(body);
         }
 
         [FunctionName(nameof(PublishVideo))]
