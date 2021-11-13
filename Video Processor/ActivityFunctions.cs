@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
@@ -8,7 +9,14 @@ using Microsoft.Extensions.Logging;
 namespace VideoProcessor
 {
     public static class ActivityFunctions
-    { 
+    {
+        [FunctionName(nameof(GetTranscodeBitRates))]
+        public static int[] GetTranscodeBitRates([ActivityTrigger] object input)
+        {
+            return Environment.GetEnvironmentVariable("TranscodeBitrates")
+                ?.Split(',').Select(int.Parse).ToArray();
+        }
+
         [FunctionName(nameof(TranscodeVideo))]
         public static async Task<VideoFileInfo> TranscodeVideo([ActivityTrigger] VideoFileInfo inputVideo, ILogger log)
         {

@@ -22,7 +22,7 @@ public class OrchestratorFunctions
 
         try
         {
-            var bitRates = new [] { 1000, 2000, 3000, 4000 };
+            var bitRates = await context.CallActivityAsync<int[]>("GetTranscodeBitRates", null);
             var transcodeTasks = bitRates
                 .Select(bitRate => new VideoFileInfo {Location = videoLocation, BitRate = bitRate})
                 .Select(info => context.CallActivityAsync<VideoFileInfo>("TranscodeVideo", info))
