@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
@@ -33,11 +34,11 @@ public class OrchestratorFunctions
 
             // calling second function:
             logger.LogInformation("about to call extract thumbnail activity");
-            thumbnailLocation = await context.CallActivityAsync<string>("ExtractThumbnail", transcodedLocation);
+            thumbnailLocation = await context.CallActivityAsync<string>(nameof(ActivityFunctions.ExtractThumbnail), transcodedLocation);
 
             // and the final one:
             logger.LogInformation("about to call prepend intro activity");
-            withIntroLocation = await context.CallActivityAsync<string>("PrependIntro", thumbnailLocation);
+            withIntroLocation = await context.CallActivityAsync<string>(nameof(ActivityFunctions.PrependIntro), thumbnailLocation);
 
             await context.CallActivityAsync("SendApprovalRequestEmail", new ApprovalInfo
             {
@@ -47,7 +48,7 @@ public class OrchestratorFunctions
 
             try
             {
-                approvalResult =await context.CallActivityAsync<string>("ApprovalResult", TimeSpan.FromSeconds(30));
+                approvalResult =await context.CallActivityAsync<string>(nameof(ActivityFunctions.SendApprovalRequestEmail), TimeSpan.FromSeconds(30));
             }
             catch (TimeoutException )
             {
@@ -57,17 +58,17 @@ public class OrchestratorFunctions
 
             if (approvalResult == "Approved")
             {
-                await context.CallActivityAsync("PublishVideo", withIntroLocation);
+                await context.CallActivityAsync(nameof(ActivityFunctions.PublishVideo), withIntroLocation);
             }
             else
             {
-                await context.CallActivityAsync("RejectVideo", withIntroLocation);
+                await context.CallActivityAsync(nameof(ActivityFunctions.RejectVideo), withIntroLocation);
             }
         }
         catch (Exception e)
         {
             logger.LogError($"Caught an error from an activity: {e.Message}");
-            await context.CallActivityAsync<string>("Cleanup",
+            await context.CallActivityAsync<string>(nameof(ActivityFunctions.Cleanup),
                 new[] {transcodedLocation, thumbnailLocation, withIntroLocation});
 
             return new
@@ -90,13 +91,34 @@ public class OrchestratorFunctions
         [OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var videoLocation = context.GetInput<string>();
-        var bitRates = await context.CallActivityAsync<int[]>("GetTranscodeBitRates", null);
+        var bitRates = await context.CallActivityAsync<int[]>(nameof(ActivityFunctions.GetTranscodeBitRates), null);
         var transcodeTasks = bitRates
             .Select(bitRate => new VideoFileInfo {Location = videoLocation, BitRate = bitRate})
-            .Select(info => context.CallActivityAsync<VideoFileInfo>("TranscodeVideo", info))
+            .Select(info => context.CallActivityAsync<VideoFileInfo>(nameof(ActivityFunctions.TranscodeVideo), info))
             .ToList();
 
         var transcodeResults = await Task.WhenAll(transcodeTasks);
         return transcodeResults;
+    }
+
+    [FunctionName(nameof(PeriodicTaskOrchestrator))]
+    public static async Task<int> PeriodicTaskOrchestrator(
+        [OrchestrationTrigger] IDurableOrchestrationContext context, ILogger logger)
+    {
+        logger = context.CreateReplaySafeLogger(logger);
+
+        var timesRun = context.GetInput<int>();
+        timesRun++;
+
+        logger.LogInformation($"Starting the PeriodicTask activity {context.InstanceId}, {timesRun}");
+
+        await context.CallActivityAsync(nameof(ActivityFunctions.PeriodicActivity), timesRun);
+
+        var nextRun = context.CurrentUtcDateTime.AddSeconds(3);
+        await context.CreateTimer(nextRun, CancellationToken.None);
+
+        context.ContinueAsNew(timesRun);
+
+        return timesRun;
     }
 }

@@ -47,4 +47,18 @@ public class HttpFunctions
 
         return new OkResult();
     }
+
+    [FunctionName(nameof(StartPeriodicTask))]
+    public static async Task<IActionResult> StartPeriodicTask(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = null)]
+        HttpRequest request,
+        [DurableClient] IDurableOrchestrationClient client,
+        ILogger logger
+    )
+    {
+        var instanceId = await client.StartNewAsync(nameof(OrchestratorFunctions.PeriodicTaskOrchestrator), null, 0);
+        var payload = client.CreateHttpManagementPayload(instanceId);
+
+        return new OkObjectResult(payload);
+    }
 }

@@ -119,5 +119,11 @@ namespace VideoProcessor
 
             return "Cleaned up successfully";
         }
+
+        [FunctionName(nameof(PeriodicActivity))]
+        public static void PeriodicActivity([ActivityTrigger] int timesRun, ILogger logger)
+        {
+            logger.LogWarning($"Running the periodic activity, times run = {timesRun}");
+        }
     }
 }
