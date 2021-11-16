@@ -1,0 +1,6 @@
+ETERNAL ORCHESTRATIONS VERSUS TIMERS
+	= ETERNAL ORCHESTRATIONS
+		- Pass data from the previous invocation to the next
+		- Can exit the orchestration if required
+		- Can vary the interval between invocations
+		- Allow multiple concurrent instances of the workflow

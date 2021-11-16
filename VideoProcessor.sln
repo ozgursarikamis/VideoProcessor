@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Notes_2.txt = Notes_2.txt
 		Notes_4.txt = Notes_4.txt
 		Notes_5.txt = Notes_5.txt
+		Notes_6.txt = Notes_6.txt
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VideoProcessor", "Video Processor\VideoProcessor.csproj", "{A2E4F15A-98FD-4D00-9765-6048979E7FC8}"
